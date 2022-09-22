@@ -1,51 +1,48 @@
-import { Component } from 'react/cjs/react.production.min';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
-import MarvelService from '../../services/MarvelService';
+import useMarvelService from '../../services/MarvelService';
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
 import Skeleton from '../skeleton/Skeleton';
 
 import './charInfo.scss';
 
-class CharInfo extends Component {
-    constructor(props) {
-        super(props)
+const CharInfo = (props) => {
 
-        this.state = {
-            char: null,
-            loading: false,
-            error: false
-        }
-    }
+    const [char, setChar] = useState(null);
 
-    marvelService = new MarvelService();
+    const {loading, error, getCharacterById, clearError} = useMarvelService();
 
-    componentDidMount() {
-        this.updateChar();
-    }
+    useEffect(() => {
+        updateChar();
+    }, [])
 
-    componentDidUpdate(prevProps, prevState) {
-        if (this.props.characterID !== prevProps.characterID) {
-            this.updateChar();
-            // this.setState({loading: true, error: false});
-        }
-    }
+    useEffect(() => {
+        updateChar();
+    }, [props.characterID])
 
-    updateChar = () => {
-        const {characterID} = this.props;
+    const updateChar = () => {
+        const {characterID} = props;
         if (!characterID) {
             return;
         }
-        this.setState({loading: true, error: false});
-        this.marvelService
-            .getCharacterById(characterID)
-            .then(char =>{this.setState({char: char, loading: false, error: false})})
-            .catch(e => this.setState({error: true, loading: false}))
+
+        clearError();
+        getCharacterById(characterID)
+            .then(char => {
+                setChar(char);
+            })
+            .catch(e => {})
     }
 
-    View = ({name, description, thumbnail, homepage, wiki, thumbnailCoverStatus, comics}) => {
+    const View = ({name, description, thumbnail, homepage, wiki, thumbnailCoverStatus, comics}) => {
         comics.splice(10);
+        const comicsId = comics.map(item => {
+            return item.resourceURI.replace(/^.+comics\//, '');
+        });
+
         return (
         <>
         <div className="char__basics">
@@ -70,7 +67,9 @@ class CharInfo extends Component {
             {comics.length < 1 ? 'There are no comics about this character yet' 
             : comics.map((item, i) => (
                 <li key={i} className="char__comics-item">
-                    {item.name}
+                    <Link to={`comics/${comicsId[i]}`}>
+                        {item.name}
+                    </Link>
                 </li>
             ))}
         </ul>
@@ -78,20 +77,16 @@ class CharInfo extends Component {
         )
     }
 
-    render = () => {
-        const {char, loading, error} = this.state;
-        let statusSkeleton = char === null && !loading ? Skeleton : null;
-        let statusLoading = loading ? Spinner : null;
-        let statusError = error ? ErrorMessage : null;
-        let currentStatus = statusError || statusSkeleton || statusLoading ||
-            this.View;
+    let statusSkeleton = char === null && !loading ? Skeleton : null;
+    let statusLoading = loading ? Spinner : null;
+    let statusError = error ? ErrorMessage : null;
+    let currentStatus = statusError || statusSkeleton || statusLoading || View;
 
-        return (
-            <div className="char__info">
-                {currentStatus(char)}
-            </div>
-        )
-    }
+    return (
+        <div className="char__info">
+            {currentStatus(char)}
+        </div>
+    )
     
 }
 
