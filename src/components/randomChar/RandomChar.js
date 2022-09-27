@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import useMarvelService from '../../services/MarvelService';
-import Spinner from '../spinner/Spinner';
-import ErrorMessage from '../errorMessage/ErrorMessage';
+import setContent from '../../utils/setContent';
 import mjolnir from '../../resources/img/mjolnir.png';
 
 import './randomChar.scss';
@@ -11,7 +10,7 @@ const RandomChar = (props) => {
 
     const [char, setChar] = useState({});
 
-    const {loading, error, getCharacterById, clearError} = useMarvelService();
+    const {getCharacterById, clearError, process, setProcess} = useMarvelService();
 
     useEffect(() => {
         updateChar()
@@ -30,6 +29,7 @@ const RandomChar = (props) => {
         
         getCharacterById(id)
             .then(onCharLoaded)
+            .then(() => setProcess('confirmed'))
             .catch(e =>{})
     }
 
@@ -37,14 +37,10 @@ const RandomChar = (props) => {
         clearError();
         updateChar();
     }
-    
-    let statusError = error ? ErrorMessage : null;
-    let statusLoading = loading ? Spinner : null;
-    let currentStatus = statusError || statusLoading || onLoaded;
 
     return (
         <div className="randomchar">
-            {currentStatus(char)}
+            {setContent(process, onLoaded, char)}
             <div className="randomchar__static">
                 <p className="randomchar__title">
                     Random character for today!<br/>
@@ -65,8 +61,9 @@ const RandomChar = (props) => {
     )
 }
 
-const onLoaded = ({name, description, thumbnail, homepage, wiki, thumbnailCoverStatus}) => {
-    let imgClassName = `randomchar__img${thumbnailCoverStatus}`
+const onLoaded = ({data}) => {
+    const {name, description, thumbnail, homepage, wiki, thumbnailCoverStatus} = data;
+    const imgClassName = `randomchar__img${thumbnailCoverStatus}`
     return (
         <div className="randomchar__block">
             <img src={thumbnail}  alt="Random character" className={imgClassName}/>

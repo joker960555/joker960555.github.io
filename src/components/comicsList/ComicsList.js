@@ -7,14 +7,35 @@ import ErrorMessage from '../errorMessage/ErrorMessage';
 
 import './comicsList.scss';
 
+const setContent = (process, Component, newItemLoading) => {
+
+    switch (process) {
+        case 'waiting':
+            return <Spinner/>;
+        case 'loading':
+            return newItemLoading ? 
+                <>
+                    <Component/>
+                    <Spinner/>
+                </> : <Spinner/>;
+        case 'confirmed':
+            return <Component/>;
+        case 'error':
+            return <ErrorMessage/>;
+        default:
+            throw new Error('Unexpected process state');
+    }
+}
+
 const ComicsList = () => {
 
     const [comicsArr, setComicsArr] = useState([]);
     const [pages, setPages] = useState(0);
     const [charEnded, setCharEnded] = useState(false);
     const [offset, setOffset] = useState(111);
+    const [newItemLoading, setNewItemLoading] = useState(false);
 
-    const {loading, error, getAllComics, getComicById} = useMarvelService();
+    const {getAllComics, process, setProcess} = useMarvelService();
 
     useEffect(() => {
         onLoadingMore();
@@ -23,15 +44,17 @@ const ComicsList = () => {
     const onComicsListLoaded = (newArr) => {
         let ended = newArr.length < 8 ? true : false;
         setCharEnded(ended);
+        setNewItemLoading(false);
 
         setComicsArr(comicsArr => comicsArr.concat(newArr));
     }
 
     const onLoadingMore = () => {
         setPages(pages => pages + 1);
-
+        comicsArr.length > 0 ? setNewItemLoading(true) : setNewItemLoading(false);
         getAllComics(offset)
             .then(res => onComicsListLoaded(res))
+            .then(() => setProcess('confirmed'))
             .catch(e=>{})
     }
 
@@ -60,18 +83,11 @@ const ComicsList = () => {
         )
     }
 
-    const statusLoading = loading && pages === 0 ? Spinner : null;
-    const statusLoadMore = loading && pages > 0 ? <Spinner/> : null;
-    const statusError = error ? ErrorMessage : null;
-    const currentStatus = statusLoading || statusError || renderComicsItems;
-
     return (
-
         <div className="comics__list">
-            {currentStatus()}
-            {statusLoadMore}
+            {setContent(process, () => renderComicsItems(), newItemLoading)}
             <button 
-                disabled={loading}
+                disabled={newItemLoading}
                 onClick={() => setOffset(offset => offset + 8)}
                 style={{'display': charEnded ? 'none' : 'block'}}
                 className="button button__main button__long"

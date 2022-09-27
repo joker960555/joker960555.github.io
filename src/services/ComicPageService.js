@@ -1,7 +1,7 @@
 
 
 const ComicPage = ({name, price = null, thumbnail, description, pageCount = null, language = null}, link = null) => {
-console.log(name, thumbnail)
+
     return (
         <div className="single-comic">
             <img src={thumbnail} alt="x-men" className="single-comic__img"/>

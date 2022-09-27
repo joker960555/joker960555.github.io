@@ -3,14 +3,12 @@ import { useForm } from "react-hook-form"
 import { Link } from "react-router-dom";
 
 import useMarvelService from "../../services/MarvelService";
-import Spinner from "../spinner/Spinner";
-import ErrorMessage from "../errorMessage/ErrorMessage";
 
 import './searchForm.scss';
 
 const SearchForm = () => {
 
-    const {getCharacterByName, loading, error} = useMarvelService();
+    const {getCharacterByName} = useMarvelService();
 
     const {register, handleSubmit, formState: {errors}, reset} = useForm();
 
@@ -24,7 +22,6 @@ const SearchForm = () => {
     };
 
     const pageUrl = (data) => {
-        console.log(data)
         return data.name;
     }
 
@@ -40,10 +37,6 @@ const SearchForm = () => {
         >{renderURL(characterData[0].name)}</Link> : 
         <p className="char__search_error">
             The character was not found. Check the name and try again</p>;
-
-    const StatusLoading = loading && <Spinner/>;
-    const StatusError = error && <ErrorMessage/>;
-    // const ActiveStatus = StatusError || StatusLoading || 
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="char__search">

@@ -3,9 +3,7 @@ import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
 import useMarvelService from '../../services/MarvelService';
-import Spinner from '../spinner/Spinner';
-import ErrorMessage from '../errorMessage/ErrorMessage';
-import Skeleton from '../skeleton/Skeleton';
+import setContent from '../../utils/setContent';
 
 import './charInfo.scss';
 
@@ -13,7 +11,7 @@ const CharInfo = (props) => {
 
     const [char, setChar] = useState(null);
 
-    const {loading, error, getCharacterById, clearError} = useMarvelService();
+    const {getCharacterById, clearError, process, setProcess} = useMarvelService();
 
     useEffect(() => {
         updateChar();
@@ -31,13 +29,13 @@ const CharInfo = (props) => {
 
         clearError();
         getCharacterById(characterID)
-            .then(char => {
-                setChar(char);
-            })
+            .then(char => setChar(char))
+            .then(() => setProcess('confirmed'))
             .catch(e => {})
     }
 
-    const View = ({name, description, thumbnail, homepage, wiki, thumbnailCoverStatus, comics}) => {
+    const View = ({data}) => {
+        const {name, description, thumbnail, homepage, wiki, thumbnailCoverStatus, comics} = data;
         comics.splice(10);
         const comicsId = comics.map(item => {
             return item.resourceURI.replace(/^.+comics\//, '');
@@ -77,14 +75,10 @@ const CharInfo = (props) => {
         )
     }
 
-    let statusSkeleton = char === null && !loading ? Skeleton : null;
-    let statusLoading = loading ? Spinner : null;
-    let statusError = error ? ErrorMessage : null;
-    let currentStatus = statusError || statusSkeleton || statusLoading || View;
 
     return (
         <div className="char__info">
-            {currentStatus(char)}
+            {setContent(process, View, char)}
         </div>
     )
     

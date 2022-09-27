@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 
@@ -9,14 +9,35 @@ import ErrorMessage from '../errorMessage/ErrorMessage';
 
 import './charList.scss';
 
+const setContent = (process, Component, newItemLoading) => {
+
+    switch (process) {
+        case 'waiting':
+            return <Spinner/>;
+        case 'loading':
+            return newItemLoading ? 
+                <>
+                    <Component/>
+                    <Spinner/>
+                </> : <Spinner/>;
+        case 'confirmed':
+            return <Component/>;
+        case 'error':
+            return <ErrorMessage/>;
+        default:
+            throw new Error('Unexpected process state');
+    }
+}
+
 const CharList = (props) => {
 
     const [charArr, setCharArr] = useState([]);
     const [pages, setPages] = useState(0);
     const [charEnded, setCharEnded] = useState(false);
     const [offset, setOffset] = useState(111);
+    const [newItemLoading, setNewItemLoading] = useState(false);
 
-    const {loading, error, getAllCharacters} = useMarvelService();
+    const {getAllCharacters, process, setProcess} = useMarvelService();
 
     useEffect(() => {
         onLoadingMore(offset);
@@ -26,13 +47,16 @@ const CharList = (props) => {
         let ended = newArray.length < 9 ? true : false;
 
         setCharArr(charArr => charArr.concat(newArray));
+        setNewItemLoading(false);
         setCharEnded(charEnded => ended);
     }
 
     const onLoadingMore = (offset) => {
         setPages(pages => pages + 1);
+        charArr.length > 0 ? setNewItemLoading(true) : setNewItemLoading(false);
         getAllCharacters(offset)
             .then(charArr => onCharListLoaded(charArr))
+            .then(() => setProcess('confirmed'))
             .catch(e => {})
     }
 
@@ -83,18 +107,17 @@ const CharList = (props) => {
             </ul>
         )
     }
-    
-    let statusLoading = loading && pages === 0 ? Spinner : null;
-    let statusLoadMore = loading && pages > 0 ? <Spinner/> : null;
-    let statusError = error ? ErrorMessage : null;
-    let currentStatus = statusError || statusLoading || renderCharListItems
+
+    const elements = useMemo(() => {
+        return setContent(process, () => renderCharListItems(charArr), newItemLoading);
+    }, [process])
+
     return (
         <div className="char__list">
-            {currentStatus(charArr)}
-            {statusLoadMore}
+            {elements}
             <button 
                 className="button button__main button__long"
-                disabled={loading}
+                disabled={newItemLoading}
                 style={{'display': charEnded ? 'none' : 'block'}}
                 onClick={() => setOffset(offset => offset + 9)} 
             >

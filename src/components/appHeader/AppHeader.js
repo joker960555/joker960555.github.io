@@ -1,15 +1,11 @@
 import {Link, NavLink, useLocation} from 'react-router-dom';
-import { useEffect } from 'react';
+// import { useEffect } from 'react';
 
 import './appHeader.scss';
 
 const AppHeader = () => {
 
-    const location = useLocation();
-
-    useEffect(()=>{console.log(location)}, [location])
-
-
+    // const location = useLocation();
 
     return (
         <header className="app__header">
@@ -21,6 +17,7 @@ const AppHeader = () => {
             <nav className="app__menu">
                 <ul>
                     <li><NavLink
+                        end
                         style={({isActive}) => ({color: isActive ? '#9f0013' : 'inherit'})} 
                         to="/">Characters</NavLink>
                     </li>
